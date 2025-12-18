@@ -1,3 +1,9 @@
+from __future__ import annotations
+from collections import UserDict
+from datetime import datetime,timedelta,date
+
+
+
 """
 Field: Базовий клас для полів запису.
 Name: Клас для зберігання імені контакту. Обов'язкове поле.
@@ -5,8 +11,6 @@ Phone: Клас для зберігання номера телефону. Ма�
 Record: Клас для зберігання інформації про контакт, включаючи ім'я та список телефонів.
 AddressBook: Клас для зберігання та управління записами.
 """
-from collections import UserDict
-from datetime import datetime,timedelta,date
 
 DATE_FORMAT='%d.%m.%Y'
 
@@ -26,8 +30,8 @@ class Record():
         
         searched_phone:Phone|None=self.find_phone(old_phone)
 
-        if searched_phone is None:
-            raise ValueError('Phone not found')
+        self.validate_phone_existence(searched_phone)
+
         if not searched_phone.is_valid_phone(new_phone):
             raise ValueError('Phone number is not valid')
         
@@ -43,9 +47,14 @@ class Record():
         
     def remove_phone(self,phone):
         searched_phone=self.find_phone(phone)
-        if searched_phone is None:
-            raise ValueError('Phone not found')
+
+        self.validate_phone_existence(searched_phone)
         self.phones.remove(searched_phone)
+
+    def validate_phone_existence(self,phone):
+        if phone is None:
+            raise ValueError('Phone not found')
+
             
             
     def add_birthday(self,date):
