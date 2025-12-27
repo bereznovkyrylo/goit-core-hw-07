@@ -50,9 +50,13 @@ class Record():
             
     def add_birthday(self,date):
         self.birthday=Birthday(date)
+    def get_birthday(self):
+        return getattr(self.birthday,'value',None)
+    def get_phones(self):
+        return '; '.join(phone.value for phone in self.phones)
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(phone.value for phone in self.phones)};"
+        return f"Contact name: {self.name.value}, phones: {self.get_phones()}, birthday:{self.get_birthday()}"
 
 class AddressBook(UserDict):
 
@@ -76,7 +80,7 @@ class AddressBook(UserDict):
         today = date.today()
 
         for user in self.data.values():
-            user_birthday=getattr(user.birthday,'value',None)
+            user_birthday=user.get_birthday()
 
             if user_birthday is None:
                 continue
@@ -136,6 +140,8 @@ class Birthday(Field):
             self.value=date
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
+    def __str__(self):
+        return self.value
 
 def input_error(func):
     def inner(*args,**kwargs):
@@ -147,17 +153,17 @@ def input_error(func):
             return 'Wrong command'
         except IndexError:
             return 'Enter the argument for the command'
+        except AttributeError:
+            return 'Contact not found'
         except Exception as e:
             return f'Error: {e}'
     return inner
-def validate_record(record):
-    if record is None:
-        raise ValueError('Contact not found')
+
     
 @input_error
 def parse_input(string):
     command,*args=string.split()
-    return command,*args
+    return command.lower(),*args
 
 @input_error
 def add_contact(args, book: AddressBook):
@@ -176,13 +182,9 @@ def add_contact(args, book: AddressBook):
 
 @input_error
 def change_contact(args,book:AddressBook):
-    if len(args)<3:
-        raise KeyError
     
     name,old_phone,new_phone,*_=args
     record = book.find(name)
-
-    validate_record(record)
     
     record.edit_phone(old_phone,new_phone)
     return "Contact updated."
@@ -191,8 +193,6 @@ def change_contact(args,book:AddressBook):
 def remove_phone(args,book:AddressBook):
     name,phone,*_=args
     record = book.find(name)
-
-
     
     record.remove_phone(phone)
     return "Phone removed."
@@ -201,9 +201,8 @@ def remove_phone(args,book:AddressBook):
 def show_phone(args,book:AddressBook):
     name,*_=args
     record = book.find(name)
-    if record is None:
-        raise KeyError
-    return record
+
+    return f"Phones: {record.get_phones()}"
 
 @input_error
 def show_all(book:AddressBook):
@@ -213,7 +212,6 @@ def show_all(book:AddressBook):
 def add_birthday(args,book:AddressBook):
     name,date,*_=args
     record=book.find(name)
-    validate_record(record)
     
     record.add_birthday(date)
     return 'Birthday added'
@@ -222,7 +220,6 @@ def add_birthday(args,book:AddressBook):
 def show_birthday(args,book:AddressBook):
     name,*_=args
     record=book.find(name)
-    validate_record(record)
     
     date=getattr(record.birthday,'value',None)
 
